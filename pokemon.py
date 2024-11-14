@@ -89,6 +89,30 @@ def plot_boxplot_defense_by_type(df):
 
 plot_boxplot_defense_by_type(leitura)
 
+def plot_boxplot_defense_by_type(df):
+    plt.figure(figsize=(12, 6))
+    sns.boxplot(data=df, x='Type1', y='Sp. Atk', palette='pastel')
+    plt.title('Distribuição do Ataque Especial por Tipo de Pokémon', fontsize=16, weight='bold')
+    plt.xlabel('Tipo', fontsize=14)
+    plt.ylabel('Ataque Especial', fontsize=14)
+    plt.xticks(rotation=45)
+    plt.grid(axis='y', linestyle='--', alpha=0.7)
+    plt.show()
+
+plot_boxplot_defense_by_type(leitura)
+
+def plot_boxplot_defense_by_type(df):
+    plt.figure(figsize=(12, 6))
+    sns.boxplot(data=df, x='Type1', y='Sp. Def', palette='pastel')
+    plt.title('Distribuição da Defesa Especial por Tipo de Pokémon', fontsize=16, weight='bold')
+    plt.xlabel('Tipo', fontsize=14)
+    plt.ylabel('Defesa Especial', fontsize=14)
+    plt.xticks(rotation=45)
+    plt.grid(axis='y', linestyle='--', alpha=0.7)
+    plt.show()
+
+plot_boxplot_defense_by_type(leitura)
+
 #Histograma
 
 def plot_histogram_types(df):
@@ -117,17 +141,139 @@ def plot_histogram_types(df):
 
 plot_histogram_types(leitura)
 
-def plot_histogram_defense(df, bins=20):
+male_value = []
+female_value = []
+genderless_value = []
+
+for index, row in leitura.iterrows():
+    if row['Male'] != 'Genderless':
+        male_value.append(float(row['Male'].split('%')[0]))
+        female_value.append(float(row['Female'].split('%')[0]))
+    else:
+        genderless_value.append(100)
+
+male_value = sum(male_value)/101400
+female_value = sum(female_value)/101400
+genderless_value = sum(genderless_value)/101400
+
+grafico = [100*male_value, 100*female_value, 100*genderless_value]
+labels = ['Macho', 'Femea', 'Sem Genero']
+
+plt.figure(figsize=(8, 6))
+bars = plt.bar(labels, grafico, color=['#1f77b4', '#ff7f0e', '#2ca02c'])
+plt.title('Distribuição Percentual de Gênero', fontsize=16, weight='bold')
+plt.xlabel('Gênero', fontsize=14)
+plt.ylabel('Valor Médio (%)', fontsize=14)
+plt.tight_layout()
+
+for bar in bars:
+    yval = bar.get_height()
+    plt.text(bar.get_x() + bar.get_width()/2, yval, f'{yval:.2f}%', ha='center', va='bottom', fontsize=12, fontweight='bold')
+
+plt.show()
+
+
+
+leitura['Male'] = leitura['Male'].replace('Genderless', np.nan)
+
+leitura['Male'] = leitura['Male'].apply(lambda x: float(str(x).replace('%', '')) / 100 if isinstance(x, str) else x)
+
+leitura['Female'] = leitura['Female'].replace('Genderless', np.nan)
+leitura['Female'] = leitura['Female'].apply(lambda x: float(str(x).replace('%', '')) / 100 if isinstance(x, str) else x)
+
+type_gender_distribution = leitura.groupby('Type1')[['Male', 'Female']].mean()
+
+type_gender_distribution = type_gender_distribution.sort_values(by='Male', ascending=False)
+
+plt.figure(figsize=(14, 8))
+
+plt.barh(type_gender_distribution.index, -type_gender_distribution['Male'], color='skyblue', edgecolor='black', label='Masculino')
+
+plt.barh(type_gender_distribution.index, type_gender_distribution['Female'], color='salmon', edgecolor='black', label='Feminino')
+
+for index, value in enumerate(type_gender_distribution['Male']):
+    plt.text(-value, index, f'{value*100:.1f}%', va='center', ha='right', color='black', fontsize=12, fontweight='bold')
+
+for index, value in enumerate(type_gender_distribution['Female']):
+    plt.text(value, index, f'{value*100:.1f}%', va='center', ha='left', color='black', fontsize=12, fontweight='bold')
+
+plt.title('Distribuição Masculina e Feminina de Pokémon por Tipo', fontsize=18, weight='bold')
+plt.xlabel('Proporção de Pokémon (%)', fontsize=14)
+plt.ylabel('Tipo de Pokémon', fontsize=14)
+
+plt.legend(title='Sexo', loc='upper left', fontsize=12, title_fontsize=14, borderpad=1.5, labelspacing=1.5, bbox_to_anchor=(1, 1))
+plt.xticks(fontsize=12)
+plt.yticks(fontsize=12)
+
+plt.tight_layout()
+
+plt.show()
+
+def plot_histogram_attack(df, bins=20):
+    fig, ax1 = plt.subplots(figsize=(12, 6))
+
+    ax1.hist(df['Attack'], bins=bins, color='#F7F744', edgecolor='black', alpha=0.7)
+    ax1.set_title('Distribuição da Ataque dos Pokémon', fontsize=16, weight='bold')
+    ax1.set_xlabel('Ataque', fontsize=14)
+    ax1.set_ylabel('Frequência', fontsize=14)
+    ax1.grid(axis='y', linestyle='--', alpha=0.7)
+
+    ax2 = ax1.twinx()
+    sns.kdeplot(df['Attack'], color='blue', linestyle='--', linewidth=2, ax=ax2)
+    ax2.grid(False)
+
+    plt.tight_layout()
+    plt.show()
+
+plot_histogram_attack(leitura)
+
+def plot_histogram_sp_attack(df, bins=20):
     plt.figure(figsize=(12, 6))
-    plt.hist(df['Defense'], bins=bins, color='skyblue', edgecolor='black', alpha=0.7)
-    plt.title('Distribuição da Defesa dos Pokémon', fontsize=16, weight='bold')
-    plt.xlabel('Defesa', fontsize=14)
+    plt.hist(df['Sp. Atk'], bins=bins, color='#8B0000', edgecolor='black', alpha=0.7)
+    plt.title('Distribuição do ataque especial dos Pokémon', fontsize=16, weight='bold')
+    plt.xlabel('Ataque especial', fontsize=14)
     plt.ylabel('Frequência', fontsize=14)
     plt.grid(axis='y', linestyle='--', alpha=0.7)
     plt.tight_layout()
     plt.show()
 
+plot_histogram_sp_attack(leitura)
+
+def plot_histogram_defense(df, bins=20):
+    fig, ax1 = plt.subplots(figsize=(12, 6))
+
+    ax1.hist(df['Defense'], bins=bins, color='#8B0000', edgecolor='black', alpha=0.7)
+    ax1.set_title('Distribuição da Defesa dos Pokémon', fontsize=16, weight='bold')
+    ax1.set_xlabel('Defesa', fontsize=14)
+    ax1.set_ylabel('Frequência', fontsize=14)
+    ax1.grid(axis='y', linestyle='--', alpha=0.7)
+
+    ax2 = ax1.twinx()
+    sns.kdeplot(df['Defense'], color='red', linestyle='--', linewidth=2, ax=ax2)
+    ax2.grid(False)
+
+    plt.tight_layout()
+    plt.show()
+
 plot_histogram_defense(leitura)
+
+def plot_histogram_speed(df, bins=20):
+    fig, ax1 = plt.subplots(figsize=(12, 6))
+
+    ax1.hist(df['Speed'], bins=bins, color='#F7C4CC', edgecolor='black', alpha=0.7)
+    ax1.set_title('Distribuição da Velocidade dos Pokémon', fontsize=16, weight='bold')
+    ax1.set_xlabel('Velocidade', fontsize=14)
+    ax1.set_ylabel('Frequência', fontsize=14)
+    ax1.grid(axis='y', linestyle='--', alpha=0.7)
+
+    ax2 = ax1.twinx()
+    sns.kdeplot(df['Speed'], color='red', linestyle='--', linewidth=2, ax=ax2)
+    ax2.grid(False)
+
+    plt.tight_layout()
+    plt.show()
+
+plot_histogram_speed(leitura)
 
 #Scatter plot
 import matplotlib.pyplot as plt
@@ -173,6 +319,71 @@ def plot_scatter_defense_spdef(df):
     plt.show()
 
 plot_scatter_defense_spdef(leitura)
+
+def plot_scatter_height_weight(df):
+    df_filtered = df[(df['Height'] != df['Height'].max()) &
+                     (df['Height'] != df['Height'].min()) &
+                     (df['Weight'] != df['Weight'].max()) &
+                     (df['Weight'] != df['Weight'].min())]
+
+    plt.figure(figsize=(12, 6))
+
+    plt.scatter(df_filtered['Height'], df_filtered['Weight'], color='lightgreen', alpha=0.7, edgecolor='black')
+
+    plt.title('Relação entre Altura e Peso dos Pokémon', fontsize=16, weight='bold')
+    plt.xlabel('Altura (m)', fontsize=14)
+    plt.ylabel('Peso (kg)', fontsize=14)
+    plt.grid(True, linestyle='--', alpha=0.7)
+
+    z = np.polyfit(df_filtered['Height'], df_filtered['Weight'], 1)
+    p = np.poly1d(z)
+    plt.plot(df_filtered['Height'], p(df_filtered['Height']), color='red', linestyle='--', linewidth=2, label='Linha de Tendência')
+
+    plt.legend()
+    plt.tight_layout()
+    plt.show()
+
+plot_scatter_height_weight(leitura)
+
+def plot_scatter_height_weight(df):
+    plt.figure(figsize=(12, 6))
+
+    plt.scatter(df['Sp. Atk'], df['Sp. Def'], color='yellow', alpha=0.7, edgecolor='black')
+
+    plt.title('Relação entre Ataque Especial e Defesa Especial', fontsize=16, weight='bold')
+    plt.xlabel('Ataque Especial', fontsize=14)
+    plt.ylabel('Defesa Especial', fontsize=14)
+    plt.grid(True, linestyle='--', alpha=0.7)
+
+    z = np.polyfit(df['Sp. Atk'], df['Sp. Def'], 1)
+    p = np.poly1d(z)
+    plt.plot(df['Sp. Atk'], p(df['Sp. Atk']), color='red', linestyle='--', linewidth=2, label='Linha de Tendência')
+
+    plt.legend()
+    plt.tight_layout()
+    plt.show()
+
+plot_scatter_height_weight(leitura)
+
+def plot_scatter_height_weight(df):
+    plt.figure(figsize=(12, 6))
+
+    plt.scatter(df['Speed'], df['Weight'], color='lightpink', alpha=0.7, edgecolor='black')
+
+    plt.title('Relação entre Velocidade e Peso', fontsize=16, weight='bold')
+    plt.xlabel('Velocidade', fontsize=14)
+    plt.ylabel('Peso (kg)', fontsize=14)
+    plt.grid(True, linestyle='--', alpha=0.7)
+
+    z = np.polyfit(df['Speed'], df['Weight'], 1)
+    p = np.poly1d(z)
+    plt.plot(df['Speed'], p(df['Speed']), color='red', linestyle='--', linewidth=2, label='Linha de Tendência')
+
+    plt.legend()
+    plt.tight_layout()
+    plt.show()
+
+plot_scatter_height_weight(leitura)
 
 #Mapa de calor
 
