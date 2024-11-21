@@ -113,33 +113,43 @@ def plot_boxplot_defense_by_type(df):
 
 plot_boxplot_defense_by_type(leitura)
 
-#Histograma
+from scipy.interpolate import make_interp_spline
+import numpy as np
 
-def plot_histogram_types(df):
+def plot_histogram_with_trend(df):
     type_counts = df['Type1'].value_counts().add(df['Type2'].value_counts(), fill_value=0)
-
     type_counts = type_counts.sort_index()
 
+    x = np.arange(len(type_counts))
+    y = type_counts.values
+
+    x_smooth = np.linspace(x.min(), x.max(), 500)
+    y_smooth = make_interp_spline(x, y)(x_smooth)
+
     plt.figure(figsize=(12, 6))
-
     colors = plt.cm.get_cmap('Pastel1', len(type_counts))
+    bars = plt.bar(type_counts.index, y, color=[colors(i) for i in range(len(type_counts))], edgecolor='black', alpha=0.8)
 
-    bars = plt.bar(type_counts.index, type_counts.values, color=[colors(i) for i in range(len(type_counts))], edgecolor='black', alpha=0.8)
+    plt.plot(x_smooth, y_smooth, color='red', linestyle='--', linewidth=2, label='Curva de Tendência')
 
-    plt.title('Distribuição dos Tipos de Pokémon', fontsize=16, weight='bold')
+    plt.title('Distribuição dos Tipos de Pokémon com Tendência', fontsize=16, weight='bold')
     plt.xlabel('Tipo', fontsize=14)
     plt.ylabel('Frequência', fontsize=14)
-    plt.xticks(rotation=45)
+    plt.xticks(rotation=45, ticks=x, labels=type_counts.index)
     plt.grid(axis='y', linestyle='--', alpha=0.7)
+    plt.legend()
 
     for bar in bars:
         yval = bar.get_height()
-        plt.text(bar.get_x() + bar.get_width()/2, yval, int(yval), ha='center', va='bottom')
+        plt.text(bar.get_x() + bar.get_width() / 2, yval, int(yval), ha='center', va='bottom')
 
     plt.tight_layout()
     plt.show()
 
-plot_histogram_types(leitura)
+plot_histogram_with_trend(leitura)
+
+from scipy.interpolate import interp1d
+import numpy as np
 
 male_value = []
 female_value = []
@@ -152,27 +162,36 @@ for index, row in leitura.iterrows():
     else:
         genderless_value.append(100)
 
-male_value = sum(male_value)/101400
-female_value = sum(female_value)/101400
-genderless_value = sum(genderless_value)/101400
+male_value = sum(male_value) / 101400
+female_value = sum(female_value) / 101400
+genderless_value = sum(genderless_value) / 101400
 
-grafico = [100*male_value, 100*female_value, 100*genderless_value]
-labels = ['Macho', 'Femea', 'Sem Genero']
+grafico = [100 * male_value, 100 * female_value, 100 * genderless_value]
+labels = ['Macho', 'Fêmea', 'Sem Gênero']
 
 plt.figure(figsize=(8, 6))
+
 bars = plt.bar(labels, grafico, color=['#1f77b4', '#ff7f0e', '#2ca02c'])
-plt.title('Distribuição Percentual de Gênero', fontsize=16, weight='bold')
+
+x = np.arange(len(grafico))
+x_smooth = np.linspace(x.min(), x.max(), 500)
+
+linear_interp = interp1d(x, grafico, kind='linear')
+y_smooth = linear_interp(x_smooth)
+
+plt.plot(x_smooth, y_smooth, color='red', linestyle='--', linewidth=2, label='Curva de Tendência')
+
+plt.title('Distribuição Percentual de Gênero com Tendência', fontsize=16, weight='bold')
 plt.xlabel('Gênero', fontsize=14)
 plt.ylabel('Valor Médio (%)', fontsize=14)
+plt.legend()
 plt.tight_layout()
 
 for bar in bars:
     yval = bar.get_height()
-    plt.text(bar.get_x() + bar.get_width()/2, yval, f'{yval:.2f}%', ha='center', va='bottom', fontsize=12, fontweight='bold')
+    plt.text(bar.get_x() + bar.get_width() / 2, yval, f'{yval:.2f}%', ha='center', va='bottom', fontsize=12, fontweight='bold')
 
 plt.show()
-
-
 
 leitura['Male'] = leitura['Male'].replace('Genderless', np.nan)
 
@@ -637,15 +656,19 @@ def plot_distribuicoes_amostrais_hp(leitura, tamanhos_amostras, num_amostras):
 
 plot_distribuicoes_amostrais_hp(leitura, tamanhos_amostras, num_amostras)
 
-#Intervalo de Confiança
-import scipy.stats as stats
+altura = leitura['Height'].astype(float).values
 
-np.random.seed(42)
-amostra = np.random.normal(loc=170, scale=10, size=50)
+Q3 = np.percentile(altura, 75)
+IQR = Q3 - Q1
 
-media_amostra = np.mean(amostra)
-desvio_padrao_amostra = np.std(amostra, ddof=1)
-n = len(amostra)
+limite_inferior = Q1 - 3.0 * IQR
+limite_superior = Q3 + 3.0 * IQR
+
+altura_filtrada = altura[(altura >= limite_inferior) & (altura <= limite_superior)]
+
+media_amostra = np.mean(altura_filtrada)
+desvio_padrao_amostra = np.std(altura_filtrada, ddof=1)
+n = len(altura_filtrada)
 
 confianca_90 = 0.90
 confianca_95 = 0.95
@@ -658,7 +681,7 @@ erro_padrao = desvio_padrao_amostra / np.sqrt(n)
 IC_90 = (media_amostra - z_90 * erro_padrao, media_amostra + z_90 * erro_padrao)
 IC_95 = (media_amostra - z_95 * erro_padrao, media_amostra + z_95 * erro_padrao)
 
-print(f"Média da amostra: {media_amostra:.2f} cm")
-print(f"Desvio padrão da amostra: {desvio_padrao_amostra:.2f} cm")
-print(f"Intervalo de Confiança de 90%: {IC_90[0]:.2f} cm a {IC_90[1]:.2f} cm")
-print(f"Intervalo de Confiança de 95%: {IC_95[0]:.2f} cm a {IC_95[1]:.2f} cm")
+print(f"Média da amostra (altura filtrada): {media_amostra:.2f} m")
+print(f"Desvio padrão da amostra: {desvio_padrao_amostra:.2f} m")
+print(f"Intervalo de Confiança de 90%: {IC_90[0]:.2f} m a {IC_90[1]:.2f} m")
+print(f"Intervalo de Confiança de 95%: {IC_95[0]:.2f} m a {IC_95[1]:.2f} m")
